@@ -1,0 +1,127 @@
+(list
+    (spmDefinePkg "SAM" "rbzentrum" "spam" "0.0.2"
+        ?authors (list "Florian Leber" "Tobias Wolfert")
+        ?description (strcat "The SKILL Application Manager (SAM), "
+                             "is a new tool for Cadence Virtuoso that assists SKILL programmers "
+                             "in software development. This tool allows a very user-friendly "
+                             "organization and execution of source code. ")
+        ?url "https://github.com/rbzentrum/SAM"
+        ?dependencies nil
+        ?requires (list 111)
+        ?license (list nil 
+                   'name "MIT" 
+                   'text (strcat 
+                        "MIT License\n"
+                        "Copyright (c) 2017 \n"
+                        "Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+                        "of this software and associated documentation files (the \"Software\"), to deal\n"
+                        "in the Software without restriction, including without limitation the rights\n"
+                        "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+                        "copies of the Software, and to permit persons to whom the Software is\n"
+                        "furnished to do so, subject to the following conditions:\n"
+                        "The above copyright notice and this permission notice shall be included in all\n"
+                        "copies or substantial portions of the Software.\n"
+                        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+                        "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+                        "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n"
+                        "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+                        "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+                        "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
+                        "SOFTWARE.\n")
+                   'url "https://raw.githubusercontent.com/rbzentrum/SAM/master/LICENSE")
+        ?entry ".saminit"
+        ?environment nil
+        ?repository "github")
+    (spmDefinePkg "SKILLFFI" "rbzentrum" "spam" "0.1.0"
+        ?authors '("Yannick Uhlmann")
+        ?description (strcat "With the Foreign Function Interface (FFI) for SKILL C-Type Libraries "
+                             "can be loaded and used within the SKILL environment.")
+        ?url "https://rbzentrum.de/"
+        ?dependencies nil          
+        ?requires (list 111)       
+        ?license (list nil 
+                 'name "MIT"       
+                 'text (strcat
+                        "MIT License\n\n
+                        Copyright (c) 2018\n\n
+                        Permission is hereby granted, free of charge, to any person obtaining a copy\n
+                        of this software and associated documentation files (the \"Software\"), to deal\n
+                        in the Software without restriction, including without limitation the rights\n
+                        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n
+                        copies of the Software, and to permit persons to whom the Software is\n
+                        furnished to do so, subject to the following conditions:\n\n
+                        The above copyright notice and this permission notice shall be included in all\n
+                        copies or substantial portions of the Software.\n\n
+                        THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n
+                        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n
+                        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n
+                        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n
+                        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n
+                        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n
+                        SOFTWARE.\n")
+                 'url "LICENSE URL")
+        ?entry "ffi.ils"
+        ?environment (list "FFIPATH")
+        ?repository "github")
+    (spmDefinePkg "ml2tikz" "rbzentrum" "spam" "1.0.0"
+        ?authors '("Matthias Schweikardt")
+        ?description (strcat "Cadence SKILL function, which can be used to create a tikzpicture of a maskLayout."
+                             "This is especially useful for theses, publications and presentation.")
+        ?url "https://rbzentrum.de/"
+        ?dependencies nil
+        ?requires (list 111)       
+        ?license (list nil 
+                 'name "MIT"       
+                 'text (strcat
+                        "MIT License\n\n
+                        Copyright (c) 2018\n\n
+                        Permission is hereby granted, free of charge, to any person obtaining a copy\n
+                        of this software and associated documentation files (the \"Software\"), to deal\n
+                        in the Software without restriction, including without limitation the rights\n
+                        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n
+                        copies of the Software, and to permit persons to whom the Software is\n
+                        furnished to do so, subject to the following conditions:\n\n
+                        The above copyright notice and this permission notice shall be included in all\n
+                        copies or substantial portions of the Software.\n\n
+                        THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n
+                        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n
+                        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n
+                        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n
+                        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n
+                        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n
+                        SOFTWARE.\n")
+                 'url "LICENSE URL")
+        ?entry "ml2tikz.il"
+        ?environment nil
+        ?repository "github")
+    (spmDefinePkg "libvc" "rbzentrum" "spam" "1.0.0"
+        ?authors '("Yannick Uhlmann")
+        ?description (strcat "his library acts as the C++ counterpart to ipcSkillProcess.")
+        ?url "https://rbzentrum.de/"
+        ?dependencies nil
+        ?requires (list 111)       
+        ?license (list nil 
+                 'name "MIT"       
+                 'text (strcat
+                        "MIT License\n\n
+                        Copyright (c) 2018\n\n
+                        Permission is hereby granted, free of charge, to any person obtaining a copy\n
+                        of this software and associated documentation files (the \"Software\"), to deal\n
+                        in the Software without restriction, including without limitation the rights\n
+                        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n
+                        copies of the Software, and to permit persons to whom the Software is\n
+                        furnished to do so, subject to the following conditions:\n\n
+                        The above copyright notice and this permission notice shall be included in all\n
+                        copies or substantial portions of the Software.\n\n
+                        THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n
+                        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n
+                        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n
+                        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n
+                        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n
+                        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n
+                        SOFTWARE.\n")
+                 'url "LICENSE URL")
+        ?entry "example.ils"
+        ?environment nil
+        ?repository "github")
+)

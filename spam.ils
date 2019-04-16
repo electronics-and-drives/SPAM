@@ -1,0 +1,415 @@
+;	SKILL Package Manager (SPAM)
+;
+;	Purpose:	The SKILL Package Manager (SPAM), is a package
+;               management system for Cadence Virtuoso to streamline
+;               the installation and distribution of SKILL code.
+;               With this, developers may easily obtain
+;               and use SKILL code provided by others.
+;               Users are able to install extensions and other
+;               software written in SKILL to enhance their
+;               Cadence Design Environment.
+;
+;	Author:		Yannick Uhlmann
+;   Email:      yannick.uhlmann@reutlingen-university.de
+;
+;	Revision:	0.0.1		(2018-11-07)
+;
+;	Copyright 2018 Reutlingen University (Germany)
+;	
+;	Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+;	and associated documentation files (the "Software"), to deal in the Software without restriction,
+;	including without limitation the rights to use, copy, modify, merge, publish, distribute,
+;	sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+;	furnished to do so, subject to the following conditions:
+;	
+;	The above copyright notice and this permission notice shall be included in all copies or substantial
+;	portions of the Software.
+;	
+;	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+;	NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+;	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+;	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+;	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+(define spamHelp (lambda (@optional (cmd nil))
+    (cond 
+        ((or (equal cmd 'spamSearch) (equal cmd 'search))
+            (printf "\n(spamSearch\n\tt_query\n)\n=> t | nil\n\n") 
+            (printf "Searches for packages with the names given by the string 't_query'.\n"))
+        ((or (equal cmd 'spamInstall) (equal cmd 'install))
+            (printf "\n(spamInstall\n\tpackages ...\n)\n=> t | nil\n\n") 
+            (printf "Installs the packages given by the strings 'packages'. ") 
+            (printf "If the installation was successful, t is returned.\n"))
+        ((or (equal cmd 'spamRemove) (equal cmd 'remove))
+            (printf "\n(spamRemove\n\tpackages\n)\n=> t | nil\n\n") 
+            (printf "Removes the packages with the names given by the strings 'packages.\n"))
+        ((or (equal cmd 'spamUpdate) (equal cmd 'update))
+            (printf "\n(spamUpdate\n\t[packages]\n)\n=> t | nil\n\n") 
+            (printf "Updates a given list of packages.") 
+            (printf "If no packages are specified, every installed package will be updated.\n"))
+        ((or (equal cmd 'spamInfo) (equal cmd 'info))
+            (printf "\n(spamInfo\n\tt_name\n)\n=> t | nil\n\n") 
+            (printf "Prints information about the given package 't_name'.\n"))
+        ((or (equal cmd 'spamUse) (equal cmd 'use))
+            (printf "\n(spamUse\n\tpackages\n)\n=> t | nil\n\n") 
+            (printf "Includes the given packages into the current toplevel") 
+            (printf "in the given order.\n"))
+        (t
+            (printf "\n\"%s\" is not a SPAM function, searching SKILL API...\n" cmd)
+            (evalstring (strcat "(help " (symbolToString cmd) ")"))))
+))
+
+(define spamSearch (lambda (@optional (t_query nil)) 
+    (if t_query
+        (let ((l_matching (filter 
+                            (lambda (name) 
+                                (nindex (lowerCase name) (lowerCase t_query))) 
+                            (arrayref (get SPAM 'packages) ?)))
+              (l_packages (transform 
+                                (lambda (name) 
+                                    (arrayref (get SPAM 'packages) name)) 
+                                (arrayref (get SPAM 'packages) ?)))
+              (u_printpkg (lambda (pkg) 
+                  (printf "%s(%s) :\t\t%s\n" 
+                          (get pkg 'name)
+                          (get pkg 'repository) 
+                          (get pkg 'description)))))
+            (printf "\n================ Matching Package Name ======================\n")
+            (transform 
+                (lambda (name) 
+                    (let ((pkg (arrayref (get SPAM 'packages) name)))
+                        (u_printpkg pkg)))
+                l_matching)
+            (printf "\n============= Matching Package Description ==================\n")
+            (transform 
+                (lambda (pkg)
+                    (if (nindex (lowerCase (get pkg 'description)) (lowerCase t_query))
+                        (u_printpkg pkg)))
+                (filter 
+                    (lambda (pkg) 
+                        (not (lindex l_matching (get pkg 'name))))
+                    l_packages))
+            (printf "\n=============================================================\n"))
+        (spamHelp 'spamSearch))
+))
+
+(define spmUrlAlive (lambda (t_url)
+    (shell (strcat "wget -q --no-check-certificate --spider " t_url))
+))
+
+(define spmPkgUrl (lambda (t_pkg)
+    (let ((r_repo (arrayref (get SPAM 'repositories) 
+                            (get (arrayref (get SPAM 'packages) t_pkg) 'repository))))
+    (if r_repo
+        ((get r_repo 'generate) 
+            t_pkg 
+            (get (arrayref (get SPAM 'packages) t_pkg) 'group)
+            (get (arrayref (get SPAM 'packages) t_pkg) 'branch))
+        (error "SPAM - Could not generate URL for %s." t_pkg)))
+))
+
+(define spmDownload (lambda (t_name)
+    (let ((t_branch (get (arrayref (get SPAM 'packages) t_name) 'branch)))
+        (if t_branch
+            (let ((t_url (spmPkgUrl t_name))
+                  (t_pkg (strcat t_name "-" t_branch ".zip")))
+                (if (spmUrlAlive t_url)
+                    (let 
+                        ((cid_dl (hsrtReadCid (ipcBeginProcess 
+                            (strcat "cd " (get SPAM 'path) "; "
+                                    "wget -q --no-check-certificate -O " t_pkg
+                                    " " t_url)))))
+                        (cond 
+                            ((null cid_dl) 
+                                (error "SPAM - Failed to download %s!" t_name))
+                            (t
+                                (printf "SPAM - Successfully downloaded %s!\n" t_name)
+                                t_pkg)))
+                    (error "SPAM - Could not find package %s with url %s" t_name t_url)))
+                (error "SPAM - Could not find branch for %s." t_name)))
+))
+
+(define spmResolve (lambda (t_name @optional (l_resolved '()))
+    (let ((l_deps (get (arrayref (get SPAM 'packages) t_name) 'depends)))
+        (if (not (null l_deps))
+            (cons t_name (reduce 
+                (lambda (dep res)
+                    (if (not (member dep l_resolved))
+                        (append (spmResolve dep (append res l_resolved)) res)))
+                '() l_deps))
+            (list t_name)))
+))
+
+(define spamInstall (lambda (@rest packages) 
+    (if (greaterp (length packages) 0)
+        (let ((l_tree (reverse
+                (reduce
+                    (lambda (pkg res) 
+                        (append (spmResolve pkg res) res)) 
+                    '() packages))))
+            (printf "SPAM - Resolving dependecies... \n")
+            (printf "SPAM - Installing")
+            (transform 
+                (lambda (t_name) (printf " -> %s" t_name))
+                l_tree)
+            (printf "\n")
+            (if (transform
+                    (lambda (t_pkg)
+                        (if t_pkg
+                            (spkgInstall (strcat (get SPAM 'path) "/" t_pkg) (get SPAM 'path))
+                            (error "SPAM - One or more packages could not be installed!")))
+                    (transform 'spmDownload l_tree))
+                (shell (strcat "rm " (get SPAM 'path) "/*.zip"))
+                (error "SPAM - Error during installation, operation aborted."))
+        )
+        (spamHelp 'spamInstall))
+))
+
+(define spmPkgPath (lambda (t_name)
+    (strcat (get SPAM 'path) "/" t_name "-" 
+            (get (arrayref 
+            (get SPAM 'packages) t_name) 'branch))
+))
+
+(define spmMetaPath (lambda (t_repo)
+    (strcat (get SPAM 'path) "/" t_repo "_meta.ils")
+))
+
+(define spmUninstall (lambda (t_name)
+    (let 
+        ((t_path (spmPkgPath t_name)))
+        (cond
+            ((isDir t_path)
+                (if (shell (strcat "rm -rf " t_path))
+                    (printf "SPAM - Removed %s\n" t_name)
+                    (error "SPAM - Failed to remove %s" t_name)))
+            (t (warn "SPAM - Package %s isn't even installed, nothing to remove" t_name))))
+))
+
+(define spamRemove (lambda (@rest packages) 
+    (if (greaterp (length packages) 0)
+        (let ()
+            (printf "SPAM - Removing packages, be aware that this may break dependent packages.\n")
+            (if (member nil (transform 'spmUninstall packages))
+                (warn "SPAM - One or more packages could not be removed!")
+                (printf "SPAM - Successfully uninstalled packages!\n")))
+        (spamHelp 'spamRemove))
+))
+
+(define spmSyncMeta (lambda (t_repo)
+    (let ((t_meta (get (arrayref (get SPAM 'repositories) t_repo) 'meta)))
+        (if (spmUrlAlive t_meta)
+            (let ((cid_dl (hsrtReadCid (ipcBeginProcess 
+                    (strcat "cd " (get SPAM 'path) "; "
+                            "wget -q --no-check-certificate -O " (strcat t_repo "_meta.ils")
+                            " " t_meta)))))
+                (cond 
+                    ((null cid_dl) 
+                        (error "SPAM - Failed to update %s's meta data!" t_repo))
+                    (t
+                        (transform
+                            (lambda (pkg)
+                                (setarray (get SPAM 'packages) (get pkg 'name) pkg))
+                            (hsrtEvalFile (spmMetaPath t_repo)))
+                        (printf "SPAM - Successfully Updated %s's meta database.\n" t_repo))))
+            (warn "SPAM - Could not update %s's meta data with %s" t_repo t_meta)))
+))
+
+(define spmPkgVersion (lambda (t_pkg)
+    (let ((r_pkg (hsrtEvalFile (strcat (spmPkgPath t_pkg) "/package.ils"))))
+        (get r_pkg 'version))
+))
+
+(define spmPkgInstalled (lambda (t_name)
+    (isFile (strcat (spmPkgPath t_name) "/package.ils"))
+))
+
+(define spmPkgUpToDate (lambda (t_name)
+    (let ((localV (transform 
+                        'evalstring 
+                        (parseString (spmPkgVersion t_name) ".")))
+          (remoteV (transform 
+                        'evalstring
+                        (parseString (get (arrayref (get SPAM 'packages) t_name) 'version) "."))))
+        (reduce 
+            (lambda (v l) 
+                (let ((local (car v)) (remote (cadr v)))
+                    (if l
+                        (geqp local remote)
+                        (greaterp local remote)))) 
+            t (mapcar 'list localV remoteV)))
+))
+
+(define spamUpdate (lambda (@rest packages) 
+    (if (greaterp (length packages) 0)
+        (let ()
+            ;(when ((get SPAM 'metaExpired) 7)
+            ;    (spamUpdate))
+            (transform 
+                (lambda (pkg)
+                    (let ((t_path (spmPkgPath pkg))
+                          (r_repo (arrayref (get SPAM 'repositories) 
+                                            (get (arrayref (get SPAM 'packages) pkg) 'repository))))
+                        (cond
+                            ((and (isDir t_path) 
+                                  (spmPkgInstalled pkg)
+                                  (spmUrlAlive (spmPkgUrl pkg)))
+                                (if (spmPkgUpToDate pkg)
+                                    (printf "SPAM - Package %s is already up to date.\n" pkg)
+                                    (let ((t_src (spmDownload pkg)))
+                                        (spmUninstall pkg)
+                                        (spkgInstall (strcat (get SPAM 'path) "/" t_src) 
+                                                     (get SPAM 'path))
+                                        (shell (strcat "rm " (get SPAM 'path) "/*.zip")))))
+                            (t (error "SPAM - Could not update %s!" pkg)))))
+                packages))
+        (transform 
+            'spmSyncMeta 
+            (get (get SPAM 'repositories) '?)))
+))
+
+(define spamInfo (lambda (@optional (t_name nil)) 
+    (if t_name
+        (let ((r_pkg (arrayref (get SPAM 'packages) t_name)))
+            (cond
+                ((not (null r_pkg))
+                    (printf "Name: %s\n" t_name)
+                    (printf "Branch: %s\n" (or (get r_pkg 'branch) "Not Specified"))
+                    (printf "Version: %s\n" (or (get r_pkg 'version) "Not Specified"))
+                    (printf "Environment: %s\n" (or (buildString (get r_pkg 'environment) ", ") 
+                                                    "Not Specified"))
+                    (printf "Required Lincenses: %s\n" (or (buildString (transform
+                                                                (lambda (lic)
+                                                                    (sprintf nil "%n" lic))
+                                                                (get r_pkg 'requires))  ", ")
+                                                             "Not Specified"))
+                    (printf "Description: %s\n\n" (or (get r_pkg 'description) "Not Specified")))
+                (t (warn "SPAM - No matching packages to list.\n"))))
+        (spamHelp 'spamInfo))
+))
+
+(define spamUse (lambda (@rest packages) 
+    (if (greaterp (length packages) 0)
+        (transform
+            (lambda (t_name)
+                (let ((r_pkg (arrayref (get SPAM 'packages) t_name)))
+                    (load (strcat (spmPkgPath t_name) "/"
+                                  (get r_pkg 'entry)))))
+            packages)
+        (spamHelp 'spamUse))
+))
+
+(define spmReadLicenseFile (lambda (p_licenseFile @optional (l_licenses '()))
+    (let (licenseLine)
+        (if (gets licenseLine p_licenseFile)
+            (if (nindex licenseLine " : ")
+                (spmReadLicenseFile p_licenseFile (cons (car (parseString licenseLine ":")) l_licenses))
+                (spmReadLicenseFile p_licenseFile l_licenses))
+            (transform (lambda (l) (car (parseString l " "))) l_licenses))
+    )
+))
+
+(define spmDefineRepo (lambda (t_name t_meta u_generator)
+    (setarray (get SPAM 'repositories) t_name 
+        (make_SREPO ?name t_name 
+                    ?meta t_meta 
+                    ?generate u_generator
+                    ?expire 7))
+))
+
+(define spmDefinePkg (lambda (t_name t_group t_branch t_version
+       @key (authors (list "FIXME NAME"))
+            (description "FIXME: add description.")
+            (requires (list 111))
+            (url "https://example.com/FIXME")
+            (license (list nil 'name "MIT" 'text "LICENSE TEXT" 'url "LICENSE URL"))
+            (dependencies (list (list "rbzentrum/spam" "master")))
+            (entry (strcat t_name ".il"))
+            (environment nil)
+            (repository "github"))
+        ;(setarray (get SPAM 'packages) t_name
+            (make_SPKG ?name t_name
+                       ?group t_group
+                       ?branch t_branch
+                       ?version t_version
+                       ?authors authors
+                       ?description description
+                       ?requires requires
+                       ?url url
+                       ?license license
+                       ?depends dependencies
+                       ?entry entry
+                       ?environment environment
+                       ?repository repository)
+        ;)
+))
+
+(define spmReload (lambda ()
+    (load (strcat (getShellEnvVar "SPAMHOMEPATH") "/spam.ils"))))
+
+(define SPAM (list nil
+    'home nil
+    'path nil
+    'repositories (makeTable "SKILL Package Repository DB")
+    'packages (makeTable "SKILL Packages Meta DB")
+    'licenses (lambda (@optional 
+                    (p_file (infile (strcat (getShellEnvVar "ICHOME") "/share/license/products.dfII"))))
+                (transform 
+                    (lambda (line) (car (parseString line " ")))
+                    (filter (lambda (line) (nindex line " : ")) 
+                        (hsrtReadFile p_file))))
+    'license (lambda ()
+                (transform 
+                    'printf 
+                    (hsrtReadFile (infile (strcat (get SPAM 'home) "/LICENSE")))))
+    'install spamInstall
+    'use spamUse
+    'update spamUpdate
+    'remove spamRemove
+    'search spamSearch
+    'help spamHelp
+    'metaExpired (lambda (n_days)
+                    (greaterp n_days (quotient 
+                        (difference 
+                            (stringToTime (getCurrentTime)) 
+                            (fileTimeModified (strcat (get SPAM 'path) "/meta.ils"))) 
+                        60 60 24)))
+    'reload (lambda ()
+                (load (strcat (get SPAM 'home) "/spam.ils")))
+))
+
+(defstruct SREPO name meta generate expire)
+
+(let ((t_home (getShellEnvVar "SPAMHOMEPATH"))
+      (t_project (getShellEnvVar "SPAMPROJPATH")))
+    (printf "Loading spam.ils\n")
+    (cond
+        ((and t_home (isDir t_home))
+            (putprop SPAM t_home 'home)
+            (load (strcat t_home "/scf.ils"))
+            (load (strcat t_home "/spkg.ils"))
+            (if (and t_project (isDir t_project))
+                (let ((t_pkgPath (strcat t_project "/skill_packages")))
+                    (unless (isDir t_pkgPath) (createDir t_pkgPath))
+                    (putprop SPAM t_pkgPath 'path)
+                    (unless (isFile (strcat t_pkgPath "/meta.ils"))
+                        (shell (strcat "cp " t_home "/meta.ils " t_pkgPath)))
+                    (unless (isFile (strcat t_pkgPath "/repo.ils"))
+                        (shell (strcat "cp " t_home "/repo.ils " t_pkgPath)))
+                    (load (if (isFile (strcat t_project "/repo.ils"))
+                        (strcat t_project "/repo.ils")
+                        (strcat t_home "/repo.ils")))
+                    (transform 
+                        (lambda (repo)
+                            (let ((l_meta (hsrtEvalFile (spmMetaPath repo))))
+                                (transform
+                                    (lambda (pkg)
+                                        (setarray (get SPAM 'packages) (get pkg 'name) pkg))
+                                    (or l_meta
+                                        (hsrtEvalFile (if (isFile (strcat t_pkgPath "/meta.ils"))
+                                                            (strcat t_pkgPath "/meta.ils")
+                                                            (strcat t_home "/meta.ils")))))))
+                        (get (get SPAM 'repositories) ?)))
+                (error "SPAM" "Env Var 'SPAMPROJPATH' must be set.")))
+        (t (error "SPAM" "Env Var 'SPAMHOMEPATH' must be set.")))
+)

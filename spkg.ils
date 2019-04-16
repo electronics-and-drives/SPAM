@@ -1,0 +1,129 @@
+;;	SKILL Package (SPKG)
+;;
+;;	Purpose:	The SKILL Package (SPKG) is a packaging format
+;;               for modularized SKILL code distribution.
+;;
+;;	Author:		Yannick Uhlmann
+;;  Email:      yannick.uhlmann@reutlingen-university.de
+;;
+;;	Revision:	0.0.1		(2018-11-07)
+;;
+;;	Copyright 2018 Reutlingen University (Germany)
+;;	
+;;	Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+;;	and associated documentation files (the "Software"), to deal in the Software without restriction,
+;;	including without limitation the rights to use, copy, modify, merge, publish, distribute,
+;;	sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+;;	furnished to do so, subject to the following conditions:
+;;	
+;;	The above copyright notice and this permission notice shall be included in all copies or substantial
+;;	portions of the Software.
+;;	
+;;	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+;;	NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+;;	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+;;	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+;;	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+(defstruct SPKG 
+    name
+    group
+    branch
+    version
+    authors
+    description
+    url
+    requires
+    license
+    depends
+    installed
+    entry
+    environment
+    repository
+)
+
+(defun spkgCreateManifest (r_pkg)
+        (strcat 
+            "(spmDefinePkg \"" (get r_pkg 'name) "\" \"" 
+                               (get r_pkg 'group) "\" \"" 
+                               (get r_pkg 'branch) "\" \"" 
+                               (get r_pkg 'version) "\"\n"
+            (reduce 
+                (lambda (field data)
+                    (sprintf nil "%s\t?%s %N\n" data field (get r_pkg field)))
+                ""
+                (filter 
+                    (lambda (field) 
+                        (unless (or (eq field 'name) 
+                                    (eq field 'group) 
+                                    (eq field 'branch)) 
+                            field)) 
+                    (get r_pkg '?)))
+            ")")
+)
+
+(defun spkgCreate (t_path r_pkg)
+    (if (and (isDir t_path) (isFile (strcat t_path "/" (get r_pkg 'entry))))
+        (let ((p_out (outfile (strcat t_path "/package.ils"))))
+            (if p_out
+                (let ((t_pkg (strcat (get r_pkg 'name) "-" (get r_pkg 'branch)))
+                      (t_manifest (spkgCreateManifest r_pkg)))
+                    (fprintf p_out "%s" t_manifest)
+                    (unless (eq t_pkg (lastElem (parseString t_path "/")))
+                        (shell (strcat "cd " t_path "/../; ln -s " t_path " " t_pkg)))
+                    (shell (strcat "cd " t_path "/../; zip " t_pkg 
+                                   " -qr " t_pkg "/ -x " t_pkg "/.git/**\\*"))
+                    (unless (eq t_pkg (lastElem (parseString t_path "/")))
+                        (shell (strcat "cd " t_path "/../; unlink " t_pkg)))
+                    (close p_out)
+                    (simplifyFilename (strcat t_path "/../" t_pkg ".zip")))
+                (error "SPKG - Inaccessible entry point!")))
+        (error "SPKG - Invalid direcotry %s" t_path))
+)
+
+(defun spkgContent (t_path)
+    (if (and (isFile t_path) (isReadable t_path))
+        (let ((t_query (hsrtReadCid (ipcBeginProcess (strcat "unzip -v " t_path)))))
+            (printf (hsrtEscape t_query "%")))
+        (error "SPKG - Content: '%s' is not a valid Path to a SKILL Package" t_path))
+)
+
+(defun spkgManifest (t_path)
+    (if (and (isFile t_path) (isReadable t_path))
+        (evalstring (hsrtReadCid (ipcBeginProcess 
+            (strcat "unzip -qqp " t_path 
+                    " " (car (hsrtExtractFileName t_path))
+                    "/package.ils | cat"))) 'ils)
+        (error "SPKG - Manifest: '%s' is not a valid Path to a SKILL Package" t_path))
+)
+
+(defun spkgQuery (t_path)
+    (if (and (isFile t_path) (isReadable t_path))
+        (let ((r_manifest (spkgManifest t_path)))
+            (printf 
+                (reduce 
+                    (lambda (field query)
+                        (sprintf query "%s%s: %N\n" query
+                                (symbolToString field)
+                                (get r_manifest field)))
+                    "" (get r_manifest '?))))
+        (error "SPKG - Query: '%s' is not a valid Path to a SKILL Package" t_path))
+)
+
+(defun spkgInstall (t_src @optional (t_dst (pwd)))
+    (if (and (isFile t_src) (isReadable t_src))
+        (let ((t_dir (simplifyFilename (strcat t_dst 
+                    "/" (get (spkgManifest t_src) 'name)
+                    "-" (get (spkgManifest t_src) 'branch)))))
+            (if (shell (strcat "cd " t_dst "; unzip -qq " t_src))
+                (if (isFile (strcat t_dir "/install.ils"))
+                    (let ((u_installer (hsrtEvalFile (strcat t_dir "/install.ils"))))
+                        (cond 
+                            ((equal (typep u_installer) 'funobj)
+                                (funcall u_installer t_dir))
+                            (u_installer t)
+                            (t nil)))
+                    t)
+                (error "SPAM - Error when unzipping %s." t_src)))
+        (error "SPKG - Installation failed, invalid source: '%s'" t_src))
+)

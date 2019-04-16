@@ -1,0 +1,8 @@
+(list
+    (spmDefineRepo 
+        "github"  
+        "https://github.com/rbzentrum/spam/meta.ils"
+        (lambda (t_name t_group t_branch) 
+            (strcat "https://github.com/" t_group "/" t_name "/archive/" t_branch ".zip"))
+    )
+)
