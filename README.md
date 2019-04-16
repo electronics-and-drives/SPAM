@@ -65,3 +65,31 @@ If the installation was successful, t is returned.
 ) => t | nil
 ```
 Removes the packages with the names given by the strings 't_name'.
+
+### spamUpdate
+```scheme
+(spamUpdate
+    [t_name]
+    ...
+) => t | nil
+```
+Updates a given list of packages (t_name).
+If no packages are specified the meta database will be updated.
+
+### spamInfo
+```scheme
+(spamInfo
+    t_name
+) => t | nil
+```
+Prints information about the given package with name 't_name'.
+
+### spamUse
+```scheme
+(spamUse
+    t_name
+    [ t_name ]
+    ...
+) => t | nil
+```
+Includes the given packages in the given order into the current toplevel.
