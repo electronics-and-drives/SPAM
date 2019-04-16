@@ -383,6 +383,7 @@
 (let ((t_home (getShellEnvVar "SPAMHOMEPATH"))
       (t_project (getShellEnvVar "SPAMPROJPATH")))
     (printf "Loading spam.ils\n")
+    (spamUpdate)
     (cond
         ((and t_home (isDir t_home))
             (putprop SPAM t_home 'home)

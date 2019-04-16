@@ -36,3 +36,32 @@ and load ```spam.ils```.
 ```
 
 ## Function Reference
+
+### spamSearch
+```scheme
+(spamSearch
+    t_query
+) => t | nil
+```
+Searches for packages with the names given by the string 't_query'.
+
+### spamInstall
+```scheme
+(spamInstall
+    t_name 
+    [ t_name ]
+    ...
+) => t | nil 
+```
+Installs the packages given by the strings 't_name'.
+If the installation was successful, t is returned.
+
+### spamRemove
+```scheme
+(spamRemove
+    t_name
+    [ t_name ]
+    ...
+) => t | nil
+```
+Removes the packages with the names given by the strings 't_name'.
