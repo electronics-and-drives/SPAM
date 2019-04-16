@@ -1,0 +1,178 @@
+/*============================================================*
+*
+*   SKILL Common Function
+*
+*   Purpose:    Collection of common SKILL functions suitable for use in any project.
+*
+*   Author:     Yannick Uhlmann
+*   Email:      yannick.uhlmann@reutlingen-university.de
+*
+*   Revision:   0.0.1       (2019-01-18)
+*
+*   Copyright 2019 Reutlingen University (Germany)
+*
+*   Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+*   and associated documentation files (the "Software"), to deal in the Software without restriction,
+*   including without limitation the rights to use, copy, modify, merge, publish, distribute,
+*   sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+*   furnished to do so, subject to the following conditions:
+*
+*   The above copyright notice and this permission notice shall be included in all copies or substantial
+*   portions of the Software.
+*
+*   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+*   NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+*   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+*   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+*   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*
+*=============================================================*/
+
+; Define Scheme style boolean values
+(define \#f nil)
+(define \#t t)
+
+; last :: (list) => element
+; Parameters:   l_collection can be any list.
+; Return:       The last element of the list,
+;               effectively the reverse of car.
+(defun lastElem (l_collection)
+    (cond
+        ((null (cdr l_collection)) (car l_collection))
+        (t (lastElem (cdr l_collection))))
+)
+
+; init :: (list) => list
+; Parameters:   l_collection can be any list.
+; Return:       The same list except the last element,
+;               effectively the reverse of cdr.
+(defun init (l_collection)
+    (cond
+        ((eq (car l_collection) (lastElem l_collection)) nil)
+        (t (cons (car l_collection) (init (cdr l_collection)))))
+)
+
+; reduce :: (function value list) => value
+; Parameters:   su_predicate :: (value value) => value, 
+;               takes 2 parameters, the current item in the collection and the accumulator.
+;               g_init is any start value for the accumulator, can be nil or 0
+;               l_collection is the collection to be reduced
+; Return:       The accumulator from the final interation.
+(defun reduce (su_predicate g_init l_collection) 
+    (cond 
+        ((null l_collection) g_init)
+        (t (funcall su_predicate (car l_collection) (reduce su_predicate g_init (cdr l_collection)))))
+)
+
+; filter :: (function list) => list
+; Parameters:   su_predicate :: (value) => bool, used to filter the list
+;               l_collection will be filtered
+; Return:       A filtered list
+(defun filter (su_predicate l_collection)
+    (cond 
+        ((null l_collection) '())
+        ((funcall su_predicate (car l_collection)) 
+            (cons (car l_collection) (filter su_predicate (cdr l_collection))))
+        (t (filter su_predicate (cdr l_collection))))
+)
+
+; transform :: (function list) => list
+; Paramters:    su_predicate :: (value) => value, takes 1 element of the list and applys a function to it
+;               l_collection will be transformed
+; Return:       A transofrmed list
+(defun transform (su_predicate l_collection)
+    (cond 
+        ((null l_collection) '())
+        (t (cons (funcall su_predicate (car l_collection)) (transform su_predicate (cdr l_collection)))))
+)
+
+; hsrtExtractFileName :: (string) => list
+; Parameters:   t_path is a path as a string.
+; Returns:      A list containing the file name and extension.
+(defun hsrtExtractFileName (t_path)
+    (let ((t_fn (parseString (lastElem (parseString t_path "/")) ".")))
+        (list (reduce 'strcat "" (init t_fn)) (lastElem t_fn)))
+)
+
+; hsrtReadFile :: (inport string) => string
+; Parameters:   p_file the inport from which is read
+;               l_content previously read lines
+; Return:       A single string with the files contents
+(defun hsrtReadFile (p_file @optional (l_content '()))
+    (let (line)
+        (cond 
+            ((null (gets line p_file)) (close p_file) l_content)
+            (t (hsrtReadFile p_file (reduce 'cons (list line) l_content))))
+    )
+)
+
+; hsrtEscape :: (string pattern ) => string
+; Parameters:   t_string is containes characters to be escaped.
+;               t_pattern is the string or character that needs to be escaped
+; Return:       The string with the given pattern escaped
+(defun hsrtEscape (t_string t_pattern)
+    (cond
+        ((eq (strcmp t_pattern "%") 0)
+            (buildString (parseString t_string t_pattern) (symbolToString '\%\%)))
+        ((eq (strcmp t_pattern "\"") 0) 
+            nil)
+        (t
+            (buildString (parseString t_string t_pattern) 
+                         (evalstring (sprintf nil "\"\\%s\"" t_pattern)))))
+)
+
+; hsrtEvalFile :: (string) => any
+; Parameters:   t_path is the path to a .il/.ils file
+; Return:       Evaluation of the last expression in the file
+(defun hsrtEvalFile (t_path)
+    (let ((p_in (infile t_path)))
+        (cond
+            (p_in (let ((x_eval (eval (read p_in))))
+                (close p_in)
+                x_eval))
+            (t  (warn "HSRT - Could not read file %s" t_path))))
+)
+
+; hsrtReadCid :: (processId string) => string
+; Parameters:   id of child process o_pid, returned from ipc call
+;               string for recursive adding
+; Return:       accumulated string until pid termination
+(defun hsrtReadCid (o_pid @optional (t_read ""))
+    (let ((t_data (ipcReadProcess o_pid 1)))
+        (if t_data
+            (hsrtReadCid o_pid (strcat t_read t_data))
+            t_read))
+)
+
+; hsrtWriteCid :: (processId string) = > string
+; Parameters:   PID of child process, started with ipcBeginProcess call
+;               string of data to write to given PID
+; Return:       Response from PID
+(defun hsrtWriteCid (o_pid t_data)
+    (when (ipcWriteProcess o_pid t_data)
+        (ipcReadProcess o_pid 1))
+)
+
+; defconst :: (symbol value) => value
+; Parameters:   s_name is the symbol name of the variable
+;               x_value is an arbitrary value which is assigned to the variable
+; Return:       The value assigned to s_name
+(defun defconst (s_name g_value)
+    (define s_name g_value)
+    (setVarWriteProtect s_name)
+    (symeval s_name)
+)
+
+; cowsay :: (string) => bool
+; Parameters:   t_say is the text, the cow says
+; Return:       Whatever printf returns
+(defun cowsay (t_say)
+    (printf (hsrtReadCid (ipcBeginProcess (strcat "echo " t_say " | cowsay"))))
+)
+
+; figlet :: (string) => bool
+; Parameters:   t_text is the text, printed with figlet
+; Return:       Whatever printf returns
+(defun figlet (t_text)
+    (printf (hsrtReadCid (ipcBeginProcess (strcat "echo " t_text " | figlet"))))
+)
