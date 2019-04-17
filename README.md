@@ -37,7 +37,16 @@ and load ```spam.ils```.
 
 ## Adding Repositories
 
-An example is given in ```repo.ils```, just add your repository in the same way to that list.
+The repository definition for github is given in ```repo.ils```, 
+just add others or private repositories in the same way to that list.
+Alternatively you can call ```spmDefineRepo``` at runtime:
+```scheme
+(spmDefineRepo 
+    t_name
+    t_metaUrl
+    u_urlGenerator
+) => r_repo
+```
 
 ## Function Reference
 
