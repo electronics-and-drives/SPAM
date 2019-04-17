@@ -383,7 +383,6 @@
 (let ((t_home (getShellEnvVar "SPAMHOMEPATH"))
       (t_project (getShellEnvVar "SPAMPROJPATH")))
     (printf "Loading spam.ils\n")
-    ;(spamUpdate)
     (cond
         ((and t_home (isDir t_home))
             (putprop SPAM t_home 'home)
@@ -400,6 +399,7 @@
                     (load (if (isFile (strcat t_project "/repo.ils"))
                         (strcat t_project "/repo.ils")
                         (strcat t_home "/repo.ils")))
+                    (spamUpdate)
                     (transform 
                         (lambda (repo)
                             (let ((l_meta (hsrtEvalFile (spmMetaPath repo))))
