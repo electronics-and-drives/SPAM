@@ -32,6 +32,7 @@
         ?entry ".saminit"
         ?environment nil
         ?repository "github")
+
     (spmDefinePkg "SKILLFFI" "rbzentrum" "spam" "0.1.0"
         ?authors '("Yannick Uhlmann")
         ?description (strcat "With the Foreign Function Interface (FFI) for SKILL C-Type Libraries "
@@ -63,6 +64,7 @@
         ?entry "ffi.ils"
         ?environment (list "FFIPATH")
         ?repository "github")
+
     (spmDefinePkg "ml2tikz" "rbzentrum" "spam" "1.0.0"
         ?authors '("Matthias Schweikardt")
         ?description (strcat "Cadence SKILL function, which can be used to create a tikzpicture of a maskLayout."
@@ -94,6 +96,7 @@
         ?entry "ml2tikz.il"
         ?environment nil
         ?repository "github")
+
     (spmDefinePkg "libvc" "rbzentrum" "spam" "1.0.0"
         ?authors '("Yannick Uhlmann")
         ?description (strcat "his library acts as the C++ counterpart to ipcSkillProcess.")
