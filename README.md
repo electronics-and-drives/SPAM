@@ -16,11 +16,11 @@ SPAM has only been tested under Cadence Design Framework:
 
 Download spam
 ```bash
-$ git clone https://github.com/rbzentrum/SPAM.git
+$ git clone https://github.com/rbzentrum/SPAM.git ~/.cadence/spam
 ```
-into a directory of your choosing, ```~/.cadence/spam/``` being recomended.
+into a directory of your choosing, for example ```~/.cadence/spam/```.
 
-Make sure ```SPAMHOMEPATH``` and ```SPAMPROJPATH``` are set either with
+Make sure environment variables ```SPAMHOMEPATH``` and ```SPAMPROJPATH``` are set either with
 ```bash
 $ export SPAMHOMEPATH=~/.cadence/spam
 $ export SPAMPROJPATH=/path/to/project
@@ -34,6 +34,10 @@ and load ```spam.ils```.
 ```scheme
 (load "spam.ils")
 ```
+
+## Adding Repositories
+
+An example is given in ```repo.ils```, just add your repository in the same way to that list.
 
 ## Function Reference
 
