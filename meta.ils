@@ -1,5 +1,5 @@
 (list
-    (spmDefinePkg "SAM" "rbzentrum" "spam" "0.0.2"
+    (spmDefinePkg "SAM" "rbzentrum" "spam" "1.0"
         ?authors (list "Florian Leber" "Tobias Wolfert")
         ?description (strcat "The SKILL Application Manager (SAM), "
                              "is a new tool for Cadence Virtuoso that assists SKILL programmers "
