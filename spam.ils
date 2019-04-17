@@ -400,14 +400,14 @@
                     (load (if (isFile (strcat t_project "/repo.ils"))
                         (strcat t_project "/repo.ils")
                         (strcat t_home "/repo.ils")))
-                    (transform 
+                    (mapcar 
                         (lambda (repo)
-                            (let ((l_meta (hsrtEvalFile (spmMetaPath repo))))
-                                (transform
+                            (let ((l_meta (load (spmMetaPath repo))))
+                                (mapcar
                                     (lambda (pkg)
                                         (setarray (get SPAM 'packages) (get pkg 'name) pkg))
                                     (or l_meta
-                                        (hsrtEvalFile (if (isFile (strcat t_pkgPath "/meta.ils"))
+                                        (load (if (isFile (strcat t_pkgPath "/meta.ils"))
                                                             (strcat t_pkgPath "/meta.ils")
                                                             (strcat t_home "/meta.ils")))))))
                         (get (get SPAM 'repositories) ?)))
