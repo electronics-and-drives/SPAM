@@ -126,7 +126,7 @@
                                 (printf "SPAM - Successfully downloaded %s!\n" t_name)
                                 t_pkg)))
                     (error "SPAM - Could not find package %s with url %s" t_name t_url)))
-                (error "SPAM - Could not find branch for %s." t_name)))
+                (error "SPAM - Could not find branch %N for %s." t_branch t_name)))
 ))
 
 (define spmResolve (lambda (t_name @optional (l_resolved '()))
