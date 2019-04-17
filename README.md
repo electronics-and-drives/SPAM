@@ -4,7 +4,7 @@ SPAM is a package management system for Cadence SKILL.
 
 ## Dependencies
 
-Following *nix utilities must be installed:
+Following utilities must be installed:
 + wget
 + unzip
 
@@ -47,6 +47,7 @@ Alternatively you can call ```spmDefineRepo``` at runtime:
     u_urlGenerator
 ) => r_repo
 ```
+and add this ```r_repo``` object to ```(get SPAM 'repositories)```.
 
 ## Function Reference
 
