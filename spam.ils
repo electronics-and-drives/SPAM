@@ -383,7 +383,7 @@
 (let ((t_home (getShellEnvVar "SPAMHOMEPATH"))
       (t_project (getShellEnvVar "SPAMPROJPATH")))
     (printf "Loading spam.ils\n")
-    (spamUpdate)
+    ;(spamUpdate)
     (cond
         ((and t_home (isDir t_home))
             (putprop SPAM t_home 'home)
@@ -400,14 +400,14 @@
                     (load (if (isFile (strcat t_project "/repo.ils"))
                         (strcat t_project "/repo.ils")
                         (strcat t_home "/repo.ils")))
-                    (mapcar 
+                    (transform 
                         (lambda (repo)
-                            (let ((l_meta (load (spmMetaPath repo))))
-                                (mapcar
+                            (let ((l_meta (hsrtEvalFile (spmMetaPath repo))))
+                                (transform
                                     (lambda (pkg)
                                         (setarray (get SPAM 'packages) (get pkg 'name) pkg))
                                     (or l_meta
-                                        (load (if (isFile (strcat t_pkgPath "/meta.ils"))
+                                        (hsrtEvalFile (if (isFile (strcat t_pkgPath "/meta.ils"))
                                                             (strcat t_pkgPath "/meta.ils")
                                                             (strcat t_home "/meta.ils")))))))
                         (get (get SPAM 'repositories) ?)))
